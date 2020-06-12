@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 nb_motors = 200                 # motors
 transport_speed = 2             # µm/s
 decay = 0.01                    # µm/s
-diffusion_coefficient = 1.75    # µm2/s
+diffusion_coefficient = 1.85    # µm2/s
 avalanche_threshold = 30        # motors
 growth_per_motor = 0.00125      # µm
 stop_time = 2400                # s
@@ -23,7 +23,7 @@ w_dist_prefactor = 10           # Weibull dist. prefactor
 # Initialization of the simulation:
 motors = [Motor(0, transport_speed) for m in range(nb_motors)]
 base_motors = len(motors)
-flagellum = Flagellum(0, decay, diffusion_coefficient)
+flagellum = Flagellum(16, decay, diffusion_coefficient)
 t = 0
 
 
@@ -39,7 +39,7 @@ inj_per_sec = []
 while t < stop_time:
     for m in motors:
         if not m.is_base:                               # m is out of the base -> m is on the flag.
-            if m.position >= flagellum.length:          # m is at the tip of the flag.
+            if m.position > flagellum.length:           # m is at the tip of the flag.
                 m.is_bound = False
                 flagellum.length += growth_per_motor
                 continue
@@ -51,15 +51,18 @@ while t < stop_time:
                     base_motors += 1
                 else:                                   # m is not at the base
                     # TODO: check if this is the random walk they intended
-                    direction = [1, -1]
+                    direction = [1, -1]                       # TODO: step of diffudion??
                     m.position -= diffusion_coefficient * random.choice(direction)
+                    if m.position > flagellum.length:
+                        m.position -= 2*diffusion_coefficient
+
     train_size = 0
     if base_motors > avalanche_threshold:  # lunch a train of motors
 
-        # TODO: the 0.1 and the 1000 ar hardcoded to make the work check what I'm missing about the Weibull_dist
+        # TODO: the 0.1 and the 1000 ar hardcoded to make the simulation work check what I'm missing about the Weibull_dist
         # compute the size of the train
-        x = 0.1 * (base_motors - avalanche_threshold)
-        train_size = 1000 * Weibull_dist(x, w_dist_prefactor, w_dist_power)
+        x = 0.1*(base_motors - avalanche_threshold)
+        train_size = 1000*Weibull_dist(x, w_dist_prefactor, w_dist_power)
 
         # find the index of all trains that are in the base
         base_motor_index = [i for i, m in enumerate(motors) if m.is_base]
